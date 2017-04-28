@@ -33,7 +33,7 @@ module.exports = function(config){
   });
 
   socket.on('disconnect', function(){
-
+    console.log(config.name + " is disconnected!!!");
   });
 
 
@@ -62,7 +62,7 @@ module.exports = function(config){
     setInterval(function(){
 
       if(socket.connected){
-        _.forEach(db.get('messages').take(10).value(), (msg) => {
+        _.forEach(db.get('messages').take(250).value(), (msg) => {
 
           socket.emit(msg.topic, msg.message, function(){
 
@@ -75,7 +75,7 @@ module.exports = function(config){
         });
       }
 
-      console.log("Queue Message Size("+ config.name +") : " + db.get("messages").size());
+      //console.log("Queue Message Size("+ config.name +") : " + db.get("messages").size());
 
     }, 500);
 

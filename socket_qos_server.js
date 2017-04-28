@@ -52,7 +52,9 @@ module.exports = function(config){
     });
 
     _.forEach(subscribes, (x) => {
-      socketClient.on(x.topic, x.callback);
+      socketClient.on(x.topic, function(data, fn){
+        x.callback(data, fn, socketClient.id);
+      });
     });
 
   });
@@ -61,6 +63,18 @@ module.exports = function(config){
     for (var i = 0; i < config.clients.length; i++) {
       var custom_client_id = config.clients[i].custom_client_id;
       emit(custom_client_id, topic, message);
+    }
+  }
+
+  function emitAllExceptSender(senderId, topic, message){
+    for (var i = 0; i < config.clients.length; i++) {
+      var custom_client_id = config.clients[i].custom_client_id;
+      var socket_id = config.clients[i].socket_id;
+      if(socket_id != senderId){
+        emit(custom_client_id, topic, message);
+      }else{
+        //skip
+      }
     }
   }
 
@@ -90,7 +104,7 @@ module.exports = function(config){
 
       _.forEach(config.clients, (c) => {
 
-        _.forEach(db.get('messages').filter({custom_client_id : c.custom_client_id }).take(10).value(), (msg) => {
+        _.forEach(db.get('messages').filter({custom_client_id : c.custom_client_id }).take(1000).value(), (msg) => {
 
           if(c.socket_id){
 
@@ -113,6 +127,7 @@ module.exports = function(config){
 
   return {
     emitAll : emitAll,
+    emitAllExceptSender : emitAllExceptSender,
     emit : emit,
     on : on
   }
