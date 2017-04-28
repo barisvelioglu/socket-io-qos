@@ -20,8 +20,6 @@ module.exports = function(config){
 
   io.on('connection', function(socketClient){
 
-    socketClient = socketClient;
-
     socketClient.on('client-info', function(data, fn){
 
       var client = _.find(config.clients, (x) => x.custom_client_id == data.custom_client_id);
@@ -30,6 +28,12 @@ module.exports = function(config){
         client.socket_id = socketClient.id;
         client.name = data.name;
       }
+
+      _.forEach(subscribes, (x) => {
+        socketClient.on(x.topic, function(data, fn){
+          x.callback(data, fn, data.custom_client_id);
+        });
+      });
 
       db.get('messages')
         .updateWhere({ custom_client_id: data.custom_client_id }, { socket_id: socketClient.id})
@@ -51,11 +55,7 @@ module.exports = function(config){
 
     });
 
-    _.forEach(subscribes, (x) => {
-      socketClient.on(x.topic, function(data, fn){
-        x.callback(data, fn, socketClient.id);
-      });
-    });
+
 
   });
 
@@ -69,8 +69,7 @@ module.exports = function(config){
   function emitAllExceptSender(senderId, topic, message){
     for (var i = 0; i < config.clients.length; i++) {
       var custom_client_id = config.clients[i].custom_client_id;
-      var socket_id = config.clients[i].socket_id;
-      if(socket_id != senderId){
+      if(custom_client_id != senderId){
         emit(custom_client_id, topic, message);
       }else{
         //skip
